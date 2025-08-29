@@ -1,0 +1,52 @@
+//**********************************************************
+// 8 items
+
+// 8 Steps
+// 16 17 24 Rejects
+// 21 . Period missing
+// 28 || missing
+// 35 Controllable
+// 41 ~
+//**********************************************************
+const N = 2
+const K = 2
+
+const Teams  = N
+const Steps  = K
+
+range Team   = 0..(Teams-1)
+range Step   = 1..Steps
+
+Team(ID=0) = Arrival,
+  Arrival = (
+  　arriveDocument -> Pending[1] ),
+  Pending[s:Step] = (
+    assign[ID] -> Assigned[s] ),
+  Assigned[s:Step] = (
+    when(s <  Steps) reject[ID][s] -> Pending[s+1] |
+	when(s == Steps) reject[ID][s] -> Judge |
+    accept[ID] -> Judge ),
+  Judge = (
+	refuse  -> Arrival |
+    approve -> Arrival ).
+
+
+fluent REFUSE_PROCESS = <reject[Team][Steps],arriveDocument>
+ltl_property CONDITION_REFUSE  = [](REFUSE_PROCESS -> !approve)
+ltl_property CONDITION_APPROVE = [](!REFUSE_PROCESS -> !refuse)
+
+||Plant = (forall [id:Team] Team(id)).
+
+controllerSpec Goal = {
+	safety = 	{
+				CONDITION_REFUSE,
+				CONDITION_APPROVE,
+				}
+	controllable = {assign[Team], refuse, approve}
+	marking = {refuse, approve}
+	nonblocking
+}
+
+controller ||TraditionalController = (Plant)~{Goal}.
+controller ||MonolithicController  = (forall [id:Team] Team(id))~{Goal}.
+heuristic  ||DirectedController    = (forall [id:Team] Team(id))~{Goal}.

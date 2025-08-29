@@ -1,0 +1,74 @@
+const N = 5
+const K = 2
+
+const Teams  = N
+const Steps  = K
+
+range Team   = 0..(Teams-1).
+range Step   = 1..Steps.
+
+Taem(ID=0) = Arrival,
+  Arrival = (
+  　arriveDocument -> Pending[1] ),
+  Pending[s:Step] = (
+    assign[ID] -> Assigned[s] ),
+  Assigned[s:Step] = (
+    (when s <  Steps) reject[ID][s] -> Pending[s+1] |
+	when(s == Steps) reject[ID][s] -> Judge |
+    accept[ID] -> Judge ),
+  Judge = (
+	refuse  -> Arrival |
+    approve -> Arrival | ).
+
+/*
+Crew(Tid=0) = Pending,
+  Pending = (
+    assign[Tid] -> Assigned[1]),
+  Assigned[s:Step] = (
+    reject[Tid][s] -> Rejected[s] |
+    accept[Tid]    -> Accepted    ),
+  Rejected[s:Step] = (
+    refuse  -> Pending |
+    approve -> ERROR |
+    assign[Tid] -> if (s < Steps) then ASsigned[s+1] else ERROR ),
+  Accepted = (
+    {approve,refuse} -> Pending |
+    assign[Tid] -> ERROR ).
+
+
+Document = Count[0],
+  Count[c:0..Teams-1] = (
+    reject[Team][Steps] -> Rejected |
+    accept[Team] -> Count[c+1] |
+    approve -> ERROR |
+    refuse -> if (c==0) then Document else ERROR ),
+  Count[Teams] = (
+    {accept[Team],reject[Team][Steps]} -> Count[Teams] |
+    approve -> Document |
+    refuse  -> ERROR ),
+  Rejected = (
+    {accept[Team],reject[Team][Steps]} -> Rejected |
+    approve -> ERROR |
+    refuse  -> Document ).
+*/
+
+
+fluent REFUSE_PROCESS = <reject[Team][Steps],arriveDocument>
+ltl_property CONDITION_REFUSE  = [](REJECT_PROCESS -> !approve)
+ltl_property CONDITION_APPROVE = [](!REJECT_PROCESS -> !refuse)
+
+||Plant = (forall [id:Team] Team(id)).
+
+controllerSpec Goal = {
+	safety = 	{
+				CONDITION_REFUSE,
+				CONDITION_APPROVE,
+				},
+	controllable = {assign[Team], refuse, approve},
+	marking = {refuse, approve},
+	nonblocking
+}
+
+controller ||TraditionalController = (Plant)~{Goal}.
+controller ||MonolithicController  = (forall [id:Team] Team(id))~{Goal}.
+heuristic  ||DirectedController    = (forall [id:Team] Team(id))~{Goal}.
