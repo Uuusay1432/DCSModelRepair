@@ -1,0 +1,8 @@
+{
+  "current_correction_context": {
+    "error_instruction": "The compiler provides the line number where it encountered an issue and explains the nature of the error. Please use this error message, along with the provided grammatical syntax error examples, to identify and correct the error in the model.",
+    "compilation_error_message": "",
+    "model_to_correct": ""
+  },
+  "current_task_instruction": "The compiler encountered a grammatical error. Please correct any grammatical errors in the provided model using the compilation error message and the examples provided."
+}

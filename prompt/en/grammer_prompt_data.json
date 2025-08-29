@@ -1,0 +1,291 @@
+{
+  "general_knowledge": {
+    "Discrete_Event_Systems": {
+      "title": "Discrete Event Systems (DES)",
+      "safety_guaranteed_des_definition": "A safety-guaranteed Discrete Event System refers to a system where undesirable events never occur, regardless of how uncontrollable events manifest.",
+      "development_procedure": [
+        "1. Environment Model Design: Modeling the environment as an environment model.",
+        "2. Safety Specification Design in the Environment: Modeling safety as a monitor model. A monitor model transitions to a violation state (a state that violates safety) if an undesirable event occurs.",
+        "3. System Behavioral Specification Development: Manually developing the behavioral specification, taking safety into consideration.",
+        "4. Behavioral Specification Verification using Model Checking."
+      ]
+    },
+    "Discrete_Controller_Synthesis": {
+      "title": "Discrete Controller Synthesis (DCS)",
+      "definition": "Discrete Controller Synthesis (DCS) automatically synthesizes a safety-guaranteed controller within the environment, given an environment model and a monitor model.",
+      "components": {
+        "Environment_Model": "An LTS (Labeled Transition System) modeling the operational environment of the system.",
+        "Monitor_Model": "An LTS modeling the safety properties to be guaranteed in the system.",
+        "Controller": "A behavioral specification (LTS) that ensures safety satisfaction."
+      },
+      "synthesis_procedure": [
+        "1. Assume the system's operating environment and model its characteristics as an environment model.",
+        "2. Define the safety to be guaranteed under the environment model and create a monitor model to monitor the satisfaction of that safety.",
+        "3. DCS Input: An environment model described by LTS, and a monitor model (requirements) defined by Linear Temporal Logic.",
+        "4. DCS Output: A controller representing the behavioral specification that is guaranteed to be safe within the environment."
+      ]
+    }
+  },
+  "grammar_rules": {
+    "LTS_Environment_Model": {
+      "title": "Environment Model using LTS",
+      "how_to_write": [
+        {
+          "id": "LTS_1",
+          "Name": "Action Prefix Syntax",
+          "Role/Purpose": "Describes the sequential execution of actions. After executing the first action, it transitions to the next process.",
+          "Notation": "(x -> P)",
+          "Example": "ONESHOT = (once -> STOP)",
+          "Note": "After executing action 'x', it moves to process 'P'. STOP represents a terminating state."
+        },
+        {
+          "id": "LTS_2",
+          "Name": "Recursive Definition for Repetition",
+          "Role/Purpose": "Describes infinite loops or stationary behaviors.",
+          "Notation": "P = (a -> b -> P)",
+          "Example": "SWITCH = (on -> off -> SWITCH)",
+          "Note": "Repeats the same pattern indefinitely. Allows for infinite traces even with a finite number of states. Process 'P' executes action 'a', then action 'b' sequentially, and then transitions back to process 'P'."
+        },
+        {
+          "id": "LTS_3",
+          "Name": "Choice Syntax",
+          "Role/Purpose": "Executes one from multiple choices.",
+          "Notation": "(x -> P | y -> Q)",
+          "Example": "DRINKS = (red -> coffee -> DRINKS | blue -> tea -> DRINKS)",
+          "Note": "Process 'DRINKS' executes action 'red' followed by action 'coffee' and then transitions back to process 'DRINKS'. Alternatively, it executes action 'blue' followed by action 'tea' and then transitions back to process 'DRINKS'."
+        },
+        {
+          "id": "LTS_4",
+          "Name": "Nondeterminism",
+          "Role/Purpose": "Allows different behaviors for the same action (internal branching).",
+          "Notation": "(x -> P | x -> Q)",
+          "Example": "COIN = (toss -> HEADS | toss -> TAILS)",
+          "Note": "The next state is not uniquely determined. Useful for expressing failure behaviors or randomness. Process 'COIN' executes action 'toss' and then transitions to process 'HEADS'. Alternatively, it executes action 'toss' and then transitions to process 'TAILS'."
+        },
+        {
+          "id": "LTS_5",
+          "Name": "Guarded Action",
+          "Role/Purpose": "Includes an action in the choices only when a condition is met.",
+          "Notation": "when (condition) x -> P",
+          "Example": "COUNT[i:0..3] = (when (i<3) inc -> COUNT[i+1] | when(i>0) dec -> COUNT[i-1])",
+          "Note": "Executable actions can be restricted based on the state. Useful for safe operational control. Process 'COUNT[i]' executes action 'inc' and transitions to process 'COUNT[i+1]' when i<3. Alternatively, it executes action 'dec' and transitions to process 'COUNT[i-1]' when i>0."
+        },
+        {
+          "id": "LTS_6",
+          "Name": "Indexed Action",
+          "Role/Purpose": "Efficiently describes multiple similar operations.",
+          "Notation": "P = (in[i:0..3] -> out[i] -> P)",
+          "Example": "BUFF = (in[i:0..3] -> out[i] -> BUFF)",
+          "Note": "Allows for array-like representation of similar operations. Expands like in.0, in.1, etc. Process 'BUFF' executes action 'in[i]' then action 'out[i]' sequentially, and then transitions back to process 'BUFF'."
+        },
+        {
+          "id": "LTS_7",
+          "Name": "Definition with Expressions in Indices",
+          "Role/Purpose": "Describes operations including numerical calculations and data processing.",
+          "Notation": "SUM = (in[a:T][b:T] -> TOTAL[a+b])",
+          "Example": "TOTAL[s:R] = (out[s] -> SUM)",
+          "Note": "Useful for modeling complex input processing and arithmetic operations."
+        }
+      ]
+    },
+    "FLTL_Supervisor_Model": {
+      "title": "Supervisor Model using FLTL",
+      "logical_property_model": [
+        {
+          "id": "FLTL_1",
+          "Type": "Fluent",
+          "Purpose": "Represents an an abstract state that becomes true when a starting action occurs and false when an ending action occurs.",
+          "Syntax": "fluent name = <{starting action}, {ending action}> initially boolean_value",
+          "Example": "fluent LIGHT = <{on}, {off, power_cut}> initially False",
+          "Note": "Can specify whether the initial value is true or false. The state changes when an action occurs. Defaults to False if omitted. In the example, fluent LIGHT means that the fluent becomes true after action 'on' is fired and remains true until action 'off' or 'power_cut' is fired."
+        },
+        {
+          "id": "FLTL_2",
+          "Type": "FLTL Expression (Logical Operators)",
+          "Purpose": "Describes logical relationships between multiple fluents.",
+          "Syntax": "FLTL = (FLUENT_1 -> FLUENT_2)",
+          "Example": "ltl_property OK = [](LIGHT -> POWER)",
+          "Note": "In the example, this means that if fluent LIGHT is always true, then fluent POWER is also true."
+        },
+        {
+          "id": "FLTL_3",
+          "Type": "FLTL Expression (Quantified)",
+          "Purpose": "Describes logical formulas with specified ranges using indices.",
+          "Syntax": "forall[i:range] FLUENT[i]",
+          "Example": "forall[i:1..2] LIGHT[i]",
+          "Note": "Indicates that the condition holds for all 'i'. 'exists' (existential quantifier) can also be used."
+        },
+        {
+          "id": "FLTL_4",
+          "Type": "FLTL Temporal Operators",
+          "Purpose": "Describes conditions related to time (future, always, next, etc.).",
+          "Operators_List": [
+            { "Operator": "[]", "Meaning": "Always", "Example": "[](LIGHT -> POWER)" },
+            { "Operator": "<>", "Meaning": "Eventually", "Example": "<>red[1].enter" },
+            { "Operator": "W", "Meaning": "Weak Until", "Example": "(!A W B)", "Note": "Means 'A does not happen until B happens'." },
+            { "Operator": "X", "Meaning": "Next", "Example": "[](A -> X(!C W B))", "Note": "Means 'if A happens, then C does not happen until B happens in the next state'." }
+          ],
+          "Note": "[] and <> are frequently used in FLTL. Other operators are used to describe complex state transitions."
+        },
+        {
+          "id": "FLTL_5",
+          "Type": "Safety Property",
+          "Purpose": "Ensures that bad things never happen (e.g., mutual exclusion).",
+          "Syntax": "ltl_property name = []!(FLUENT_A && FLUENT_B)",
+          "Example": "ltl_property MUTEX = []!(CRITICAL[1] && CRITICAL[2])",
+          "Note": "Describes things like not entering a critical section simultaneously. [] means 'always'."
+        },
+        {
+          "id": "FLTL_6",
+          "Type": "Liveness Property",
+          "Purpose": "Ensures that good things will eventually happen.",
+          "Syntax": "ltl_property name = <>event",
+          "Example": "ltl_property FIRSTRED = <>red[1].enter",
+          "Note": "Guarantees that a certain action will eventually be executed in the future."
+        },
+        {
+          "id": "FLTL_7",
+          "Type": "Response Property",
+          "Purpose": "Ensures that after one event, another event will always follow.",
+          "Syntax": "ltl_property name = [](request -> <>response)",
+          "Example": "ltl_property REDEXIT = forall[i:ID] [](red[i].enter -> <>red[i].exit)",
+          "Note": "Properties in the form of request-response. Described by combining [] and <>."
+        }
+      ]
+    }
+  },
+  "example_model": {
+    "title": "Model Example",
+    "Environment_Section": "/***********************************\nEnvironment\n***********************************/\n\nconst K = 5\nrange N = 0..K\n\nALERT_MODEL = ALERT,\nALERT = (alert -> all_clear -> ALERT).\n\nROOM_MODEL = STATE_0[0],\nSTATE_0[n:N] = (reqEnter -> STATE_1[n] | when(n > 0) leave[n-1] -> STATE_0[n-1],\nSTATE_1[n:N] = (when(n == K)allow -> arrive[n+1]-> STATE_0[n+1] | deny -> STATE_0[n]).\n\n||ALERT_MODEL = (ALERT_MODEL).\n||ROOM_MODEL = (ROOM_MODEL).\n\n||Environment = (ALERT_MODEL || ROOM_MODEL).\n\n/*\n\n||Environment = (ALERT_MODEL || ROOM_MODEL_NEW).\n\nALERT_MODEL || ROOM_MODEL_NEW：\n// parallel composition of processes ALERT_MODEL and ROOM_MODEL_NEW.\n\nEnvironment：\n// The name (label) of the new process being synthesized.\n||Environment = (...)：\n// This means that “a new synthetic process called Environment is defined by the following parallel synthesize.\n\n*/",
+    "Requirement_Section": "/***********************************\nRequirement\n***********************************/\n\n\nltl_property SAFETY1 = [](!arrive[2])\nltl_property SAFETY2 = [](alert -> X(!allow W all_clear))\nfluent Emergency = <alert, all_clear>\nltl_property SAFETY3 = [](Emergency -> !allow)\n\nfluent FULL = <arrive[1], leave[0]>\nltl_property SAFETY4 = [](!FULL -> !deny)",
+    "Controller_Section": "/***********************************\nController\n***********************************/\ncontrollerSpec Requirement = \n{\n\tsafety = {SAFETY1, SAFETY4}\t\t//Describe the safety features you want to guarantee when building a controller\n\tcontrollable = {allow,deny}\t\t\t\t//Describe controllable actions here\n}\n\ncontroller ||Controller = (Environment)~{Requirement}.\n/*\ncontroller ||(name of controller) = (environment)~{name of controllerSpec /*Requirement in this case*/}\n*/"
+  },
+  "grammar_correction_examples": [
+    {
+      "id": 1,
+      "type": "syntax_error",
+      "category": "Comma and Period Mistake",
+      "error_instruntion": "Warning - STATE_0.6 defined to be ERROR",
+      "before": "STATE = (alert -> all_clear -> STATE),",
+      "after":  "STATE = (alert -> all_clear -> STATE)."
+    },
+    {
+      "id": 2,
+      "type": "syntax_error",
+      "category": "Hyphen vs. Equals Sign Mistake",
+      "error_instruntion": "ERROR line: - = expected",
+      "before": "const X - 5",
+      "after":  "const X = 5"
+    },
+    {
+      "id": 3,
+      "type": "syntax_error",
+      "category": "Curly Braces vs. Parentheses Mistake",
+      "error_instruntion": "ERROR line: - { expected",
+      "before": "controller ||Controller = (CourceEnvironment||RobotEnvironment)~(Requirement).",
+      "after":  "controller ||Controller = (CourceEnvironment||RobotEnvironment)~{Requirement}."
+    },
+    {
+      "id": 4,
+      "type": "syntax_error",
+      "category": "Missing '|' Operator",
+      "error_instruntion": "ERROR line: - ) expected",
+      "before": "STATE0[n:N] = (reqEnter -> STATE1[n] when(n > 0) leave[n] -> STATE0[n-1]),",
+      "after":  "STATE0[n:N] = (reqEnter -> STATE1[n] | when(n > 0) leave[n] -> STATE0[n-1]),"
+    },
+    {
+      "id": 5,
+      "type": "syntax_error",
+      "category": "Superfluous Comma",
+      "error_instruntion": "ERROR line: - Controller symbol expected",
+      "before": "safety = {NotReturnPT1},",
+      "after":  "safety = {NotReturnPT1}"
+    },
+    {
+      "id": 6,
+      "type": "syntax_error",
+      "category": "Missing Period",
+      "error_instruntion": "ERROR line: - dot expected",
+      "before": "controllar ||Controllar = (ALL_MODEL)~{Requirement}",
+      "after":  "controllar ||Controllar = (ALL_MODEL)~{Requirement}."
+    },
+    {
+      "id": 7,
+      "type": "syntax_error",
+      "category": "Missing Period",
+      "error_instruntion": "ERROR line: - dot expected",
+      "before": "LOCK_A = (unlock_A -> lock_A -> LOCK_A)",
+      "after":  "LOCK_A = (unlock_A -> lock_A -> LOCK_A)."
+    },
+    {
+      "id": 8,
+      "type": "syntax_error",
+      "category": "Missing Period",
+      "error_instruntion": "ERROR line: - dot expected",
+      "before": "HOLD_BLOCK = (detect -> blockDetected -> put -> STATE_0)",
+      "after":  "HOLD_BLOCK = (detect -> blockDetected -> put -> STATE_0)."
+    },
+    {
+      "id": 9,
+      "type": "syntax_error",
+      "category": "Missing Period",
+      "error_instruntion": "ERROR line: - dot expected",
+      "before": "controller ||Controller = (ENV)~{Spec}",
+      "after":  "controller ||Controller = (ENV)~{Spec}."
+    },
+    {
+      "id": 10,
+      "type": "syntax_error",
+      "category": "Missing '}'",
+      "error_instruntion": "ERROR line: - } expected",
+      "before": "EMPTY = ({inG.pt1toG->FULL), FULL = ({outG, gtoPT1}->EMPTY).",
+      "after":  "EMPTY = ({inG.pt1toG}->FULL), FULL = ({outG, gtoPT1}->EMPTY)."
+    },
+    {
+      "id": 11,
+      "type": "syntax_error",
+      "category": "Superfluous Period",
+      "error_instruntion": "ERROR line: - syntax error in expression",
+      "before": "range NUM_OF_SLOT = 1...3",
+      "after":  "range NUM_OF_SLOT = 1..3"
+    },
+    {
+      "id": 12,
+      "type": "syntax_error",
+      "category": "Superfluous Comma",
+      "error_instruntion": "ERROR line: - Controller symbol expected",
+      "before": "safety = {NOT_RETURN_1, NOT_RETURN_2},\ncontrollable = {RobotActions}",
+      "after":  "safety = {NOT_RETURN_1, NOT_RETURN_2}\ncontrollable = {RobotActions}"
+    },
+    {
+      "id": 13,
+      "type": "syntax_error",
+      "category": "Superfluous Comma",
+      "error_instruntion": "ERROR line: - identifier, label set or range expected",
+      "before": "pt2topPT3, , pt3topPT2",
+      "after":  "pt2topPT3, pt3topPT2"
+    },
+    {
+      "id": 14,
+      "type": "syntax_error",
+      "category": "Incorrect 'when' Usage / Parentheses Placement",
+      "error_instruntion": "ERROR line: - identifier, label set or range expected",
+      "before": "ROOM_A[n:N] = ((when n<K)...",
+      "after":  "ROOM_A[n:N] = (\n when (n<K)..."
+    },
+    {
+      "id": 15,
+      "type": "syntax_error",
+      "category": "Incorrect '||' Operator Placement",
+      "error_instruntion": "ERROR line: - process identifier expected",
+      "before": "||controller Controller = (Environment)~{Requirement}.",
+      "after":  "controller ||Controller = (Environment)~{Requirement}."
+    }
+  ],
+  "current_correction_context": {
+    "error_instruction": "The compiler provides the line number where it encountered an issue and explains the nature of the error. Please use this error message, along with the provided grammatical syntax error examples, to identify and correct the error in the model.",
+    "compilation_error_message": "",
+    "model_to_correct": ""
+  },
+  "current_task_instruction": "The compiler encountered a grammatical error. Please correct any grammatical errors in the provided model using the compilation error message and the examples provided."
+}
